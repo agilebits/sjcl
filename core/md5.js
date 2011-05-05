@@ -85,7 +85,7 @@ sjcl.hash.md5.prototype = {
 
     // append the length
     b.push(this._length | 0);
-    b.push(Math.floor(this._length / 0x100000000));
+    b.push((this._length / 0x100000000)|0);
 
     while (b.length) {
       // b.length is passed to avoid swapping and reswapping length bytes
@@ -122,7 +122,7 @@ sjcl.hash.md5.prototype = {
     var i, x;
     for (i=0; i<n; i++) {
       x = w[i];
-      w[i] = (x>>24&0xff) | (x>>8&0xff00) | ((x&0xff00)<<8) | ((x&0xff)<<24);
+      w[i] = (x>>>24) | (x>>8&0xff00) | ((x&0xff00)<<8) | ((x&0xff)<<24);
     }
   },
   
@@ -136,15 +136,24 @@ sjcl.hash.md5.prototype = {
   /* Will be precomputed */
   _T:[],
   /*
-    0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee, 0xf57c0faf, 0x4787c62a, 0xa8304613, 0xfd469501,
-    0x698098d8, 0x8b44f7af, 0xffff5bb1, 0x895cd7be, 0x6b901122, 0xfd987193, 0xa679438e, 0x49b40821,
-    0xf61e2562, 0xc040b340, 0x265e5a51, 0xe9b6c7aa, 0xd62f105d, 0x02441453, 0xd8a1e681, 0xe7d3fbc8,
-    0x21e1cde6, 0xc33707d6, 0xf4d50d87, 0x455a14ed, 0xa9e3e905, 0xfcefa3f8, 0x676f02d9, 0x8d2a4c8a,
-    0xfffa3942, 0x8771f681, 0x6d9d6122, 0xfde5380c, 0xa4beea44, 0x4bdecfa9, 0xf6bb4b60, 0xbebfbc70,
-    0x289b7ec6, 0xeaa127fa, 0xd4ef3085, 0x04881d05, 0xd9d4d039, 0xe6db99e5, 0x1fa27cf8, 0xc4ac5665,
-    0xf4292244, 0x432aff97, 0xab9423a7, 0xfc93a039, 0x655b59c3, 0x8f0ccc92, 0xffeff47d, 0x85845dd1,
-    0x6fa87e4f, 0xfe2ce6e0, 0xa3014314, 0x4e0811a1, 0xf7537e82, 0xbd3af235, 0x2ad7d2bb, 0xeb86d391
-  */
+   * 0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee,
+   * 0xf57c0faf, 0x4787c62a, 0xa8304613, 0xfd469501,
+   * 0x698098d8, 0x8b44f7af, 0xffff5bb1, 0x895cd7be,
+   * 0x6b901122, 0xfd987193, 0xa679438e, 0x49b40821,
+   * 0xf61e2562, 0xc040b340, 0x265e5a51, 0xe9b6c7aa,
+   * 0xd62f105d, 0x02441453, 0xd8a1e681, 0xe7d3fbc8,
+   * 0x21e1cde6, 0xc33707d6, 0xf4d50d87, 0x455a14ed,
+   * 0xa9e3e905, 0xfcefa3f8, 0x676f02d9, 0x8d2a4c8a,
+   * 0xfffa3942, 0x8771f681, 0x6d9d6122, 0xfde5380c,
+   * 0xa4beea44, 0x4bdecfa9, 0xf6bb4b60, 0xbebfbc70,
+   * 0x289b7ec6, 0xeaa127fa, 0xd4ef3085, 0x04881d05,
+   * 0xd9d4d039, 0xe6db99e5, 0x1fa27cf8, 0xc4ac5665,
+   * 0xf4292244, 0x432aff97, 0xab9423a7, 0xfc93a039,
+   * 0x655b59c3, 0x8f0ccc92, 0xffeff47d, 0x85845dd1,
+   * 0x6fa87e4f, 0xfe2ce6e0, 0xa3014314, 0x4e0811a1,
+   * 0xf7537e82, 0xbd3af235, 0x2ad7d2bb, 0xeb86d391
+   * @private
+   */
   _precompute:function() {
     var i;
     for (i=0; i<64; i++) {
@@ -153,25 +162,16 @@ sjcl.hash.md5.prototype = {
   },
 
   /**
-   * The MD5 outer function
-   * @private
-   */
-  _FFGGHHII:function(a, b, c, d, w, f, s, i, j) {
-    var s = s[j];
-    a += f(b, c, d) + w[this._X[i+j]] + this._T[i+j];
-    return ((a << s) | (a >>> 32-s)) + b;
-  },
-
-  /**
    * Perform one cycle of MD5.
    * @param {bitArray} words one block of words.
    * @private
    */
   _block:function (words, notlast) {  
-    var i, r, f, s,
+    var i, r, f, S,
     a, b, c, d,
     w = words.slice(0),
-    h = this._h;
+    h = this._h,
+    T = this._T, X = this._X;
 
     a = h[0]; b = h[1]; c = h[2]; d = h[3];
 
@@ -180,12 +180,16 @@ sjcl.hash.md5.prototype = {
       if (i%16==0) {
         r = i/16|0;
         f = this._FGHI[r];
-        s = this._S[r];
+        S = this._S[r];
       }
-      a = this._FFGGHHII(a, b, c, d, w, f, s, i, 0)
-      d = this._FFGGHHII(d, a, b, c, w, f, s, i, 1)
-      c = this._FFGGHHII(c, d, a, b, w, f, s, i, 2)
-      b = this._FFGGHHII(b, c, d, a, w, f, s, i, 3)
+      a += f(b, c, d) + w[X[i  ]] + T[i  ];
+      a = (((a << S[0]) | (a >>> 32-S[0])) + b)|0;
+      d += f(a, b, c) + w[X[i+1]] + T[i+1];
+      d = (((d << S[1]) | (d >>> 32-S[1])) + a)|0;
+      c += f(d, a, b) + w[X[i+2]] + T[i+2];
+      c = (((c << S[2]) | (c >>> 32-S[2])) + d)|0;
+      b += f(c, d, a) + w[X[i+3]] + T[i+3];
+      b = (((b << S[3]) | (b >>> 32-S[3])) + c)|0;
     }
 
     h[0] += a;
