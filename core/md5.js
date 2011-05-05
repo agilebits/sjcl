@@ -63,7 +63,7 @@ sjcl.hash.md5.prototype = {
         nl = this._length = ol + sjcl.bitArray.bitLength(data);
     for (i = this.blockSize+ol & -this.blockSize; i <= nl;
          i+= this.blockSize) {
-      this._block(b.splice(0,16));
+      this._block(b.splice(0,16), true);
     }
     return this;
   },
@@ -83,15 +83,16 @@ sjcl.hash.md5.prototype = {
     }
 
     // append the length
-    b.push(this._BS(this._length | 0));
-    b.push(this._BS(Math.floor(this._length / 0x100000000)));
+    b.push(this._length | 0);
+    b.push(Math.floor(this._length / 0x100000000));
 
     while (b.length) {
-      this._block(b.splice(0,16));
+      // b.length is passed to avoid swapping and reswapping length bytes
+      this._block(b.splice(0,16), b.length);
     }
 
     this.reset();
-    for (i=0; i<4; i++) { h[i] = this._BS(h[i]); }
+    this._BS(h, 4);
     return h;
   },
 
@@ -113,31 +114,17 @@ sjcl.hash.md5.prototype = {
   ],
 
   /**
-   * Circular left-shift operator.
-   * @private
-   */
-  _RL:function(n, x) {
-    return (x << n) | (x >>> 32-n);
-  },
-
-  /**
    * Byte swap
    * @private
    */
-  _BS:function(x) {
-    return (x>>24&0xff) | (x>>8&0xff00) | ((x&0xff00)<<8) | ((x&0xff)<<24);
+  _BS:function(w, n) {
+    var i, x;
+    for (i=0; i<n; i++) {
+      x = w[i];
+      w[i] = (x>>24&0xff) | (x>>8&0xff00) | ((x&0xff00)<<8) | ((x&0xff)<<24);
+    }
   },
   
-  /**
-   * 32 bit addition via 2 16 bit words, from http://pajhome.org.uk/crypt/md5/
-   * @private
-   */
-  _A:function(x, y) {
-    var lsw = (x & 0xFFFF) + (y & 0xFFFF);
-    var msw = (x >> 16) + (y >> 16) + (lsw >> 16);
-    return (msw << 16) | (lsw & 0xFFFF);
-  },
-
   _S:[[7, 12, 17, 22], [5, 9, 14, 20], [4, 11, 16, 23], [6, 10, 15, 21]],
 
   _T:[
@@ -164,8 +151,9 @@ sjcl.hash.md5.prototype = {
    * @private
    */
   _FFGGHHII:function(a, b, c, d, w, f, s, i, j) {
-    var A = this._A, R = this._RL, tx = this._T[i+j];
-    return A(R(s[j], A(A(a, f(b, c, d)), A(w[tx[0]], tx[1]))), b);
+    var s = s[j], tx = this._T[i+j];
+    a += f(b, c, d) + w[tx[0]] + tx[1];
+    return ((a << s) | (a >>> 32-s)) + b;
   },
 
   /**
@@ -173,7 +161,7 @@ sjcl.hash.md5.prototype = {
    * @param {bitArray} words one block of words.
    * @private
    */
-  _block:function (words) {  
+  _block:function (words, notlast) {  
     var i, r, f, s,
     a, b, c, d,
     w = words.slice(0),
@@ -181,20 +169,22 @@ sjcl.hash.md5.prototype = {
 
     a = h[0]; b = h[1]; c = h[2]; d = h[3];
 
-    for (i=0; i<16; i++) { w[i] = this._BS(w[i]); }
+    this._BS(w, notlast?16:14);
     for (i=0; i<64; i+=4) {
-      r = i/16|0;
-      f = this._FGHI[r];
-      s = this._S[r];
+      if (i%16==0) {
+        r = i/16|0;
+        f = this._FGHI[r];
+        s = this._S[r];
+      }
       a = this._FFGGHHII(a, b, c, d, w, f, s, i, 0)
       d = this._FFGGHHII(d, a, b, c, w, f, s, i, 1)
       c = this._FFGGHHII(c, d, a, b, w, f, s, i, 2)
       b = this._FFGGHHII(b, c, d, a, w, f, s, i, 3)
     }
 
-    h[0] = this._A(h[0], a);
-    h[1] = this._A(h[1], b);
-    h[2] = this._A(h[2], c);
-    h[3] = this._A(h[3], d);
+    h[0] += a;
+    h[1] += b;
+    h[2] += c;
+    h[3] += d;
   }
 };
