@@ -104,17 +104,6 @@ sjcl.hash.md5.prototype = {
   _init:[0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476],
 
   /**
-   * The MD5 inner functions
-   * @private
-   */
-  _FGHI:[
-    function(x, y, z) { return (x & y) | (~x & z); },
-    function(x, y, z) { return (x & z) | (y & ~z); },
-    function(x, y, z) { return x ^ y ^ z; },
-    function(x, y, z) { return y ^ (x | ~z); }
-  ],
-
-  /**
    * Byte swap
    * @private
    */
@@ -126,13 +115,6 @@ sjcl.hash.md5.prototype = {
     }
   },
   
-  _S:[[7, 12, 17, 22], [5, 9, 14, 20], [4, 11, 16, 23], [6, 10, 15, 21]],
-
-  _X:[0,  1,  2,  3, 4,  5,  6,  7, 8,  9, 10, 11, 12, 13, 14, 15,
-      1,  6, 11,  0, 5, 10, 15,  4, 9, 14,  3,  8, 13,  2,  7, 12,
-      5,  8, 11, 14, 1,  4,  7, 10, 13,  0,  3,  6, 9, 12, 15,  2,
-      0,  7, 14,  5, 12,  3, 10,  1, 8, 15,  6, 13, 4, 11,  2,  9],
-
   /* Will be precomputed */
   _T:[],
   /*
@@ -167,29 +149,42 @@ sjcl.hash.md5.prototype = {
    * @private
    */
   _block:function (words, notlast) {  
-    var i, r, f, S,
-    a, b, c, d,
+    var i, a, b, c, d,
     w = words.slice(0),
     h = this._h,
-    T = this._T, X = this._X;
+    T = this._T;
 
     a = h[0]; b = h[1]; c = h[2]; d = h[3];
 
     this._BS(w, notlast?16:14);
-    for (i=0; i<64; i+=4) {
-      if (i%16==0) {
-        r = i/16|0;
-        f = this._FGHI[r];
-        S = this._S[r];
+    for (i=0; i<64; i++) {
+      var f, x, s, t;
+      if (i < 32) {
+        if (i < 16) {
+          f = (b & c) | ((~b) & d);
+          x = i;
+          s = [7, 12, 17, 22];
+        } else {
+          f = (d & b) | ((~d) & c);
+          x = (5 * i + 1) % 16;
+          s = [5, 9, 14, 20];
+        }
+      } else {
+        if (i < 48) {
+          f = b ^ c ^ d;
+          x = (3 * i + 5) % 16;
+          s = [4, 11, 16, 23];
+        } else {
+          f = c ^ (b | (~d));
+          x = (7 * i) % 16;
+          s = [6, 10, 15, 21];
+        }
       }
-      a += f(b, c, d) + w[X[i  ]] + T[i  ];
-      a = (((a << S[0]) | (a >>> 32-S[0])) + b)|0;
-      d += f(a, b, c) + w[X[i+1]] + T[i+1];
-      d = (((d << S[1]) | (d >>> 32-S[1])) + a)|0;
-      c += f(d, a, b) + w[X[i+2]] + T[i+2];
-      c = (((c << S[2]) | (c >>> 32-S[2])) + d)|0;
-      b += f(c, d, a) + w[X[i+3]] + T[i+3];
-      b = (((b << S[3]) | (b >>> 32-S[3])) + c)|0;
+      t = a + f + w[x] + T[i];
+      a = d;
+      d = c;
+      c = b;
+      b = (((t << s[i%4]) | (t >>> 32-s[i%4])) + b)|0;
     }
 
     h[0] += a;
