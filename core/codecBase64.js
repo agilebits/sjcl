@@ -32,12 +32,13 @@ sjcl.codec.base64 = {
   
   /** Convert from a base64 string to a bitArray */
   toBits: function(str) {
+//	console.log("str: " + str);
     str = str.replace(/\s|=/g,'');
     var out = [], i, bits=0, c = sjcl.codec.base64._chars, ta=0, x;
-    for (i=0; i<str.length; i++) {
+    for (i=0; i < str.length; i++) {
       x = c.indexOf(str.charAt(i));
       if (x < 0) {
-        throw new sjcl.exception.invalid("this isn't base64!");
+        throw new sjcl.exception.invalid("this isn't base64: '" + str.charAt(i) + "', " + i + " -- " + str.length);
       }
       if (bits > 26) {
         bits -= 26;

@@ -8,7 +8,7 @@
  /** @namespace JSON encapsulation */
  sjcl.json = {
   /** Default values for encryption */
-  defaults: { v:1, iter:1000, ks:128, ts:64, mode:"ccm", adata:"", cipher:"aes" },
+  defaults: { 'v':1, 'iter':1000, 'ks':128, 'ts':64, 'mode':"ccm", 'adata':"", 'cipher':"aes" },
 
   /** Simple encryption function.
    * @param {String|bitArray} password The password or key.
@@ -22,41 +22,41 @@
     params = params || {};
     rp = rp || {};
     
-    var j = sjcl.json, p = j._add({ iv: sjcl.random.randomWords(4,0) },
+    var j = sjcl.json, p = j._add({ 'iv': sjcl.random.randomWords(4,0) },
                                   j.defaults), tmp, prp;
     j._add(p, params);
-    if (typeof p.salt === "string") {
-      p.salt = sjcl.codec.base64.toBits(p.salt);
+    if (typeof p['salt'] === "string") {
+      p['salt'] = sjcl.codec.base64.toBits(p['salt']);
     }
-    if (typeof p.iv === "string") {
-      p.iv = sjcl.codec.base64.toBits(p.iv);
+    if (typeof p['iv'] === "string") {
+      p['iv'] = sjcl.codec.base64.toBits(p['iv']);
     }
     
-    if (!sjcl.mode[p.mode] ||
-        !sjcl.cipher[p.cipher] ||
-        (typeof password === "string" && p.iter <= 100) ||
-        (p.ts !== 64 && p.ts !== 96 && p.ts !== 128) ||
-        (p.ks !== 128 && p.ks !== 192 && p.ks !== 256) ||
-        (p.iv.length < 2 || p.iv.length > 4)) {
-      throw new sjcl.exception.invalid("json encrypt: invalid parameters");
+    if (!sjcl.mode[p['mode']] ||
+        !sjcl.cipher[p['cipher']] ||
+        (typeof password === "string" && p['iter'] <= 100) ||
+        (p['ts'] !== 64 && p['ts'] !== 96 && p['ts'] !== 128) ||
+        (p['ks'] !== 128 && p['ks'] !== 192 && p['ks'] !== 256) ||
+        (p['iv'].length < 2 || p['iv'].length > 4)) {
+      throw new sjcl.exception.invalid("json encrypt: invalid parameters: " + JSON.stringify(p));
     }
     
     if (typeof password === "string") {
       tmp = sjcl.misc.cachedPbkdf2(password, p);
-      password = tmp.key.slice(0,p.ks/32);
-      p.salt = tmp.salt;
+      password = tmp['key'].slice(0,p['ks']/32);
+      p['salt'] = tmp['salt'];
     }
     if (typeof plaintext === "string") {
       plaintext = sjcl.codec.utf8String.toBits(plaintext);
     }
-    prp = new sjcl.cipher[p.cipher](password);
+    prp = new sjcl.cipher[p['cipher']](password);
     
     /* return the json data */
     j._add(rp, p);
-    rp.key = password;
+    rp['key'] = password;
     
     /* do the encryption */
-    p.ct = sjcl.mode[p.mode].encrypt(prp, plaintext, p.iv, p.adata, p.ts);
+    p.ct = sjcl.mode[p['mode']].encrypt(prp, plaintext, p['iv'], p['adata'], p['ts']);
     
     return j.encode(j._subtract(p, j.defaults));
   },
@@ -75,36 +75,36 @@
     rp = rp || {};
     
     var j = sjcl.json, p = j._add(j._add(j._add({},j.defaults),j.decode(ciphertext)), params, true), ct, tmp, prp;
-    if (typeof p.salt === "string") {
-      p.salt = sjcl.codec.base64.toBits(p.salt);
+    if (typeof p['salt'] === "string") {
+      p['salt'] = sjcl.codec.base64.toBits(p['salt']);
     }
-    if (typeof p.iv === "string") {
-      p.iv = sjcl.codec.base64.toBits(p.iv);
+    if (typeof p['iv'] === "string") {
+      p['iv'] = sjcl.codec.base64.toBits(p['iv']);
     }
     
-    if (!sjcl.mode[p.mode] ||
-        !sjcl.cipher[p.cipher] ||
-        (typeof password === "string" && p.iter <= 100) ||
-        (p.ts !== 64 && p.ts !== 96 && p.ts !== 128) ||
-        (p.ks !== 128 && p.ks !== 192 && p.ks !== 256) ||
-        (!p.iv) ||
-        (p.iv.length < 2 || p.iv.length > 4)) {
+    if (!sjcl.mode[p['mode']] ||
+        !sjcl.cipher[p['cipher']] ||
+        (typeof password === "string" && p['iter'] <= 100) ||
+        (p['ts'] !== 64 && p['ts'] !== 96 && p['ts'] !== 128) ||
+        (p['ks'] !== 128 && p['ks'] !== 192 && p['ks'] !== 256) ||
+        (!p['iv']) ||
+        (p['iv'].length < 2 || p['iv'].length > 4)) {
       throw new sjcl.exception.invalid("json decrypt: invalid parameters");
     }
     
     if (typeof password === "string") {
       tmp = sjcl.misc.cachedPbkdf2(password, p);
-      password = tmp.key.slice(0,p.ks/32);
-      p.salt  = tmp.salt;
+      password = tmp['key'].slice(0,p['ks']/32);
+      p['salt']  = tmp['salt'];
     }
-    prp = new sjcl.cipher[p.cipher](password);
+    prp = new sjcl.cipher[p['cipher']](password);
     
     /* do the decryption */
-    ct = sjcl.mode[p.mode].decrypt(prp, p.ct, p.iv, p.adata, p.ts);
+    ct = sjcl.mode[p['mode']].decrypt(prp, p.ct, p['iv'], p['adata'], p['ts']);
     
     /* return the json data */
     j._add(rp, p);
-    rp.key = password;
+    rp['key'] = password;
     
     return sjcl.codec.utf8String.fromBits(ct);
   },
@@ -156,7 +156,7 @@
   decode: function (str) {
     str = str.replace(/\s/g,'');
     if (!str.match(/^\{.*\}$/)) { 
-      throw new sjcl.exception.invalid("json decode: this isn't json!");
+      throw new sjcl.exception.invalid("json decode: this isn't json: " + str);
     }
     var a = str.replace(/^\{|\}$/g, '').split(/,/), out={}, i, m;
     for (i=0; i<a.length; i++) {
@@ -255,17 +255,17 @@ sjcl.misc.cachedPbkdf2 = function (password, obj) {
   var cache = sjcl.misc._pbkdf2Cache, c, cp, str, salt, iter;
   
   obj = obj || {};
-  iter = obj.iter || 1000;
+  iter = obj['iter'] || 1000;
   
   /* open the cache for this password and iteration count */
   cp = cache[password] = cache[password] || {};
-  c = cp[iter] = cp[iter] || { firstSalt: (obj.salt && obj.salt.length) ?
-                     obj.salt.slice(0) : sjcl.random.randomWords(2,0) };
+  c = cp[iter] = cp[iter] || { 'firstSalt': (obj['salt'] && obj['salt'].length) ?
+                     obj['salt'].slice(0) : sjcl.random.randomWords(2,0) };
           
-  salt = (obj.salt === undefined) ? c.firstSalt : obj.salt;
+  salt = (obj['salt'] === undefined) ? c['firstSalt'] : obj['salt'];
   
-  c[salt] = c[salt] || sjcl.misc.pbkdf2(password, salt, obj.iter);
-  return { key: c[salt].slice(0), salt:salt.slice(0) };
+  c[salt] = c[salt] || sjcl.misc.pbkdf2(password, salt, obj['iter']);
+  return { 'key': c[salt].slice(0), 'salt':salt.slice(0) };
 };
 
 

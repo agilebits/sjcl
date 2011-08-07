@@ -12,11 +12,11 @@
  * @author Mike Hamburg
  * @author Dan Boneh
  */
-if (sjcl.beware === undefined) {
-  sjcl.beware = {};
-}
-sjcl.beware["CBC mode is dangerous because it doesn't protect message integrity."
-] = function() {
+// if (sjcl.beware === undefined) {
+//   sjcl.beware = {};
+// }
+// sjcl.beware["CBC mode is dangerous because it doesn't protect message integrity."
+// ] = function() {
   sjcl.mode.cbc = {
     /** The name of the mode.
      * @constant
@@ -112,4 +112,4 @@ sjcl.beware["CBC mode is dangerous because it doesn't protect message integrity.
       return w.bitSlice(output, 0, output.length*32 - bi*8);
     }
   };
-};
+// };

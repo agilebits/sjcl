@@ -329,7 +329,7 @@ sjcl.ecc._dh = function(cn) {
 
 sjcl.ecc._dh("elGamal");
 
-sjcl.ecc.elGamal.publicKey.prototype = {
+sjcl.ecc["elGamal"].publicKey.prototype = {
   kem: function(paranoia) {
     var sec = sjcl.bn.random(this._curve.r, paranoia),
         tag = this._curve.G.mult(sec).toBits(),
@@ -338,7 +338,7 @@ sjcl.ecc.elGamal.publicKey.prototype = {
   }
 };
 
-sjcl.ecc.elGamal.secretKey.prototype = {
+sjcl.ecc["elGamal"].secretKey.prototype = {
   unkem: function(tag) {
     return sjcl.hash.sha256.hash(this._curve.fromBits(tag).mult(this._exponent).toBits());
   },
@@ -350,7 +350,7 @@ sjcl.ecc.elGamal.secretKey.prototype = {
 
 sjcl.ecc._dh("ecdsa");
 
-sjcl.ecc.ecdsa.secretKey.prototype = {
+sjcl.ecc["ecdsa"].secretKey.prototype = {
   sign: function(hash, paranoia) {
     var R = this._curve.r,
         l = R.bitLength(),
@@ -361,7 +361,7 @@ sjcl.ecc.ecdsa.secretKey.prototype = {
   }
 };
 
-sjcl.ecc.ecdsa.publicKey.prototype = {
+sjcl.ecc["ecdsa"].publicKey.prototype = {
   verify: function(hash, rs) {
     var w = sjcl.bitArray,
         R = this._curve.r,
