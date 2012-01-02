@@ -67,6 +67,10 @@ var sjcl = {
     }
   }
 };
+
+if(typeof module != 'undefined' && module.exports){
+  module.exports = sjcl;
+}
 /** @fileOverview Low-level AES implementation.
  *
  * This file contains a low-level implementation of AES, optimized for
@@ -546,8 +550,9 @@ sjcl.codec.base64 = {
   _chars: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",
   
   /** Convert from a bitArray to a base64 string. */
-  fromBits: function (arr, _noEquals) {
+  fromBits: function (arr, _noEquals, _url) {
     var out = "", i, bits=0, c = sjcl.codec.base64._chars, ta=0, bl = sjcl.bitArray.bitLength(arr);
+    if (_url) c = c.substr(0,62) + '-_';
     for (i=0; out.length * 6 < bl; ) {
       out += c.charAt((ta ^ arr[i]>>>bits) >>> 26);
       if (bits < 6) {
@@ -564,11 +569,11 @@ sjcl.codec.base64 = {
   },
   
   /** Convert from a base64 string to a bitArray */
-  toBits: function(str) {
-//	console.log("str: " + str);
+  toBits: function(str, _url) {
     str = str.replace(/\s|=/g,'');
     var out = [], i, bits=0, c = sjcl.codec.base64._chars, ta=0, x;
-    for (i=0; i < str.length; i++) {
+    if (_url) c = c.substr(0,62) + '-_';
+    for (i=0; i<str.length; i++) {
       x = c.indexOf(str.charAt(i));
       if (x < 0) {
         throw new sjcl.exception.invalid("this isn't base64: '" + str.charAt(i) + "', " + i + " -- " + str.length);
@@ -587,6 +592,11 @@ sjcl.codec.base64 = {
     }
     return out;
   }
+};
+
+sjcl.codec.base64url = {
+  fromBits: function (arr) { return sjcl.codec.base64.fromBits(arr,1,1); },
+  toBits: function (str) { return sjcl.codec.base64.toBits(str,1); }
 };
 /** @fileOverview Bit array codec implementations.
  *
@@ -2727,7 +2737,7 @@ sjcl.random = {
         if (!i.match(/^[a-z0-9]+$/i)) {
           throw new sjcl.exception.invalid("json encode: invalid property name");
         }
-        out += comma + i + ':';
+        out += comma + '"' + i + '"' + ':';
         comma = ',';
         
         switch (typeof obj[i]) {
@@ -2765,13 +2775,13 @@ sjcl.random = {
     }
     var a = str.replace(/^\{|\}$/g, '').split(/,/), out={}, i, m;
     for (i=0; i<a.length; i++) {
-      if (!(m=a[i].match(/^([a-z][a-z0-9]*):(?:(\d+)|"([a-z0-9+\/%*_.@=\-]*)")$/i))) {
+      if (!(m=a[i].match(/^(?:(["']?)([a-z][a-z0-9]*)\1):(?:(\d+)|"([a-z0-9+\/%*_.@=\-]*)")$/i))) {
         throw new sjcl.exception.invalid("json decode: this isn't json!");
       }
-      if (m[2]) {
-        out[m[1]] = parseInt(m[2],10);
+      if (m[3]) {
+        out[m[2]] = parseInt(m[3],10);
       } else {
-        out[m[1]] = m[1].match(/^(ct|salt|iv)$/) ? sjcl.codec.base64.toBits(m[3]) : unescape(m[3]);
+        out[m[2]] = m[2].match(/^(ct|salt|iv)$/) ? sjcl.codec.base64.toBits(m[4]) : unescape(m[4]);
       }
     }
     return out;
