@@ -16,7 +16,6 @@
 /**
  * Context for a SHA-256 operation in progress.
  * @constructor
- * @class Secure Hash Algorithm, 256 bits.
  */
 sjcl.hash.sha256 = function (hash) {
   if (!this._key[0]) { this._precompute(); }
@@ -69,15 +68,29 @@ sjcl.hash.sha256.prototype = {
     var i, b = this._buffer = sjcl.bitArray.concat(this._buffer, data),
         ol = this._length,
         nl = this._length = ol + sjcl.bitArray.bitLength(data);
-    for (i = 512+ol & -512; i <= nl; i+= 512) {
-      this._block(b.splice(0,16));
+    if (nl > 9007199254740991){
+      throw new sjcl.exception.invalid("Cannot hash more than 2^53 - 1 bits");
+    }
+
+    if (typeof Uint32Array !== 'undefined') {
+	var c = new Uint32Array(b);
+    	var j = 0;
+    	for (i = 512+ol - ((512+ol) & 511); i <= nl; i+= 512) {
+      	    this._block(c.subarray(16 * j, 16 * (j+1)));
+      	    j += 1;
+    	}
+    	b.splice(0, 16 * j);
+    } else {
+	for (i = 512+ol - ((512+ol) & 511); i <= nl; i+= 512) {
+      	    this._block(b.splice(0,16));
+      	}
     }
     return this;
   },
   
   /**
    * Complete hashing and output the hash value.
-   * @return {bitArray} The hash value, an array of 16 big-endian words.
+   * @return {bitArray} The hash value, an array of 8 big-endian words.
    */
   finalize:function () {
     var i, b = this._buffer, h = this._h;
@@ -134,34 +147,35 @@ sjcl.hash.sha256.prototype = {
    * @private
    */
   _precompute: function () {
-    var i = 0, prime = 2, factor;
+    var i = 0, prime = 2, factor, isPrime;
 
     function frac(x) { return (x-Math.floor(x)) * 0x100000000 | 0; }
 
-    outer: for (; i<64; prime++) {
+    for (; i<64; prime++) {
+      isPrime = true;
       for (factor=2; factor*factor <= prime; factor++) {
         if (prime % factor === 0) {
-          // not a prime
-          continue outer;
+          isPrime = false;
+          break;
         }
       }
-      
-      if (i<8) {
-        this._init[i] = frac(Math.pow(prime, 1/2));
+      if (isPrime) {
+        if (i<8) {
+          this._init[i] = frac(Math.pow(prime, 1/2));
+        }
+        this._key[i] = frac(Math.pow(prime, 1/3));
+        i++;
       }
-      this._key[i] = frac(Math.pow(prime, 1/3));
-      i++;
     }
   },
   
   /**
    * Perform one cycle of SHA-256.
-   * @param {bitArray} words one block of words.
+   * @param {Uint32Array|bitArray} w one block of words.
    * @private
    */
-  _block:function (words) {  
+  _block:function (w) {  
     var i, tmp, a, b,
-      w = words.slice(0),
       h = this._h,
       k = this._key,
       h0 = h[0], h1 = h[1], h2 = h[2], h3 = h[3],

@@ -1,6 +1,6 @@
 browserUtil = {};
 
-browserUtil.isRhino = (typeof(window) === 'undefined');
+browserUtil.isNodeJS = (typeof(window) === 'undefined');
 
 /**
  * Pause (for the graphics to update and the script timer to clear), then run the
@@ -34,10 +34,10 @@ browserUtil.cpsIterate = function (f, start, end, pause, callback) {
 browserUtil.cpsMap = function (map, list, pause, callback) {
   browserUtil.cpsIterate(function (i, cb) { map(list[i], i, list.length, cb); },
                          0, list.length, pause, callback);
-}
+};
 
 /** Cache for remotely loaded scripts. */
-browserUtil.scriptCache = {}
+browserUtil.scriptCache = {};
 
 /** Load several scripts, then call back */
 browserUtil.loadScripts = function(scriptNames, cbSuccess, cbError) {
@@ -101,7 +101,7 @@ browserUtil.loadScripts = function(scriptNames, cbSuccess, cbError) {
             cbError && cbError(script, xhr.status, cb);
           }
         }
-      }
+      };
       xhr.open("GET", script+"?"+(new Date().valueOf()), true);
       xhr.send();
     }
@@ -120,6 +120,35 @@ browserUtil.write = function(type, message) {
     d4.className = type2 + " also";
     d4.appendChild(document.createTextNode(message2));
     d2.insertBefore(d4, d3);
+  }};
+};
+
+browserUtil.writeTable = function (headers) {
+  var d1 = document.getElementById("print"), d2 = document.createElement("table"), d3 = document.createElement("tr");
+  d2.className = 'table';
+
+  // write the headers
+  for (var i = 0; i < headers.length; i++) {
+    var header = document.createElement("th");
+    header.appendChild(document.createTextNode(headers[i]));
+    d3.appendChild(header);
+  }
+
+  d2.appendChild(d3);
+  d1.appendChild(d2);
+
+  return { update: function (row) {
+    var d4 = document.createElement("tr");
+
+    // write the rows
+    for (var i = 0; i < row.length; i++) {
+      var cell = document.createElement("td");
+
+      cell.appendChild(document.createTextNode(row[i]));
+      d4.appendChild(cell);
+    }
+
+    d2.appendChild(d4);
   }};
 };
 

@@ -64,7 +64,7 @@ function doEncrypt() {
         mode:v.mode,
         ts:parseInt(v.tag),
         ks:parseInt(v.keysize) };
-  if (!v.freshiv || !usedIvs[v.iv]) { iv:v.iv; }
+  if (!v.freshiv || !usedIvs[v.iv]) { p.iv = v.iv; }
   if (!v.freshsalt || !usedSalts[v.salt]) { p.salt = v.salt; }
   ct = sjcl.encrypt(password || key, plaintext, p, rp).replace(/,/g,",\n");
 
@@ -80,7 +80,7 @@ function doEncrypt() {
     v.ciphertext = ct;
     v.adata = '';
   } else {
-    v.ciphertext = ct.match(/ct:"([^"]*)"/)[1]; //"
+    v.ciphertext = ct.match(/"ct":"([^"]*)"/)[1]; //"
   }
   
   v.plaintext = '';
@@ -108,7 +108,7 @@ function doDecrypt() {
     }
     v.mode = rp.mode;
     v.iv = rp.iv;
-    v.adata = rp.adata;
+    v.adata = sjcl.codec.utf8String.fromBits(rp.adata);
     if (v.password) {
       v.salt = rp.salt;
       v.iter = rp.iter;

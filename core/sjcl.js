@@ -10,27 +10,46 @@
 
 "use strict";
 /*jslint indent: 2, bitwise: false, nomen: false, plusplus: false, white: false, regexp: false */
-/*global document, window, escape, unescape */
+/*global document, window, escape, unescape, module, require, Uint32Array */
 
-/** @namespace The Stanford Javascript Crypto Library, top-level namespace. */
+/**
+ * The Stanford Javascript Crypto Library, top-level namespace.
+ * @namespace
+ */
 var sjcl = {
-  /** @namespace Symmetric ciphers. */
+  /**
+   * Symmetric ciphers.
+   * @namespace
+   */
   cipher: {},
 
-  /** @namespace Hash functions.  Right now only SHA256 is implemented. */
+  /**
+   * Hash functions.  Right now only SHA256 is implemented.
+   * @namespace
+   */
   hash: {},
 
-  /** @namespace Key exchange functions.  Right now only SRP is implemented. */
+  /**
+   * Key exchange functions.  Right now only SRP is implemented.
+   * @namespace
+   */
   keyexchange: {},
   
-  /** @namespace Block cipher modes of operation. */
+  /**
+   * Cipher modes of operation.
+   * @namespace
+   */
   mode: {},
 
-  /** @namespace Miscellaneous.  HMAC and PBKDF2. */
+  /**
+   * Miscellaneous.  HMAC and PBKDF2.
+   * @namespace
+   */
   misc: {},
   
   /**
-   * @namespace Bit array encoders and decoders.
+   * Bit array encoders and decoders.
+   * @namespace
    *
    * @description
    * The members of this namespace are functions which translate between
@@ -40,34 +59,45 @@ var sjcl = {
    */
   codec: {},
   
-  /** @namespace Exceptions. */
+  /**
+   * Exceptions.
+   * @namespace
+   */
   exception: {
-    /** @class Ciphertext is corrupt. */
+    /**
+     * Ciphertext is corrupt.
+     * @constructor
+     */
     corrupt: function(message) {
       this.toString = function() { return "CORRUPT: "+this.message; };
       this.message = message;
     },
     
-    /** @class Invalid parameter. */
+    /**
+     * Invalid parameter.
+     * @constructor
+     */
     invalid: function(message) {
       this.toString = function() { return "INVALID: "+this.message; };
       this.message = message;
     },
     
-    /** @class Bug or missing feature in SJCL. */
+    /**
+     * Bug or missing feature in SJCL.
+     * @constructor
+     */
     bug: function(message) {
       this.toString = function() { return "BUG: "+this.message; };
       this.message = message;
     },
 
-    /** @class Something isn't ready. */
+    /**
+     * Something isn't ready.
+     * @constructor
+     */
     notReady: function(message) {
       this.toString = function() { return "NOT READY: "+this.message; };
       this.message = message;
     }
   }
 };
-
-if(typeof module != 'undefined' && module.exports){
-  module.exports = sjcl;
-}

@@ -5,8 +5,9 @@
  * @author Dan Boneh
  */
 
-/** @namespace Arrays of bits, encoded as arrays of Numbers.
- *
+/**
+ * Arrays of bits, encoded as arrays of Numbers.
+ * @namespace
  * @description
  * <p>
  * These objects are the currency accepted by SJCL's crypto functions.
@@ -31,7 +32,7 @@
 sjcl.bitArray = {
   /**
    * Array slices in units of bits.
-   * @param {bitArray a} The array to slice.
+   * @param {bitArray} a The array to slice.
    * @param {Number} bstart The offset to the start of the slice, in bits.
    * @param {Number} bend The offset to the end of the slice, in bits.  If this is undefined,
    * slice until the end of the array.
@@ -46,7 +47,7 @@ sjcl.bitArray = {
    * Extract a number packed into a bit array.
    * @param {bitArray} a The array to slice.
    * @param {Number} bstart The offset to the start of the slice, in bits.
-   * @param {Number} length The length of the number to extract.
+   * @param {Number} blength The length of the number to extract.
    * @return {Number} The requested slice.
    */
   extract: function(a, bstart, blength) {
@@ -74,7 +75,7 @@ sjcl.bitArray = {
       return a1.concat(a2);
     }
     
-    var out, i, last = a1[a1.length-1], shift = sjcl.bitArray.getPartial(last);
+    var last = a1[a1.length-1], shift = sjcl.bitArray.getPartial(last);
     if (shift === 32) {
       return a1.concat(a2);
     } else {
@@ -115,7 +116,7 @@ sjcl.bitArray = {
    * Make a partial word for a bit array.
    * @param {Number} len The number of bits in the word.
    * @param {Number} x The bits.
-   * @param {Number} [0] _end Pass 1 if x has already been shifted to the high side.
+   * @param {Number} [_end=0] Pass 1 if x has already been shifted to the high side.
    * @return {Number} The partial word.
    */
   partial: function (len, x, _end) {
@@ -183,5 +184,19 @@ sjcl.bitArray = {
    */
   _xor4: function(x,y) {
     return [x[0]^y[0],x[1]^y[1],x[2]^y[2],x[3]^y[3]];
+  },
+
+  /** byteswap a word array inplace.
+   * (does not handle partial words)
+   * @param {sjcl.bitArray} a word array
+   * @return {sjcl.bitArray} byteswapped array
+   */
+  byteswapM: function(a) {
+    var i, v, m = 0xff00;
+    for (i = 0; i < a.length; ++i) {
+      v = a[i];
+      a[i] = (v >>> 24) | ((v >>> 8) & m) | ((v & m) << 8) | (v << 24);
+    }
+    return a;
   }
 };
