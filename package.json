@@ -3,6 +3,7 @@
   "version": "1.0.4",
   "description": "Stanford Javascript Crypto Library",
   "main": "sjcl.js",
+  "types": "sjcl.d.ts",
   "author": "bitwiseshiftleft",
   "keywords": [
     "encryption",
