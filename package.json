@@ -5,6 +5,8 @@
   "main": "sjcl.js",
   "types": "sjcl.d.ts",
   "author": "bitwiseshiftleft",
+  "license": "(BSD-2-Clause OR GPL-2.0-only)",
+  "homepage": "https://github.com/bitwiseshiftleft/sjcl",
   "keywords": [
     "encryption",
     "high-level",
